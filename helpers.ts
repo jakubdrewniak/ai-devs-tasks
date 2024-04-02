@@ -1,5 +1,8 @@
 import axios from "axios";
 import { config } from "dotenv";
+import * as fs from "fs";
+import * as https from "https";
+import { ChatOpenAI } from "@langchain/openai";
 
 const getTask = async (
   taskName: string
@@ -51,4 +54,35 @@ const postResponse = async (data: unknown, token: string): Promise<void> => {
   }
 };
 
-export { getTask, postResponse };
+async function downloadFile(
+  fileUrl: string,
+  filePath: string,
+  options: https.RequestOptions = {}
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(filePath);
+    https
+      .get(fileUrl, options, (response) => {
+        response.pipe(file);
+        file.on("finish", () => {
+          file.close();
+          resolve();
+        });
+      })
+      .on("error", async (err) => {
+        // await unlink(filePath).catch(() => {}); // Try to delete the file in case of error
+        reject(err);
+      });
+  });
+}
+
+function getChatInstance(modelName = "gpt-3.5-turbo"): ChatOpenAI {
+  config();
+  const apiKey = process.env.api_key;
+  return new ChatOpenAI({
+    openAIApiKey: apiKey,
+    modelName,
+  });
+}
+
+export { getTask, postResponse, downloadFile, getChatInstance };
