@@ -38,12 +38,16 @@ const runTask = async () => {
         (await axios.get("https://unknow.news/archiwum_aidevs.json")).data;
 
       let documents = data.map(
-        (content) => new Document({ pageContent: JSON.stringify(content) })
+        (d) => new Document({ pageContent: JSON.stringify(d.info) })
       );
       // Add metadata
-      documents = documents.map((document) => {
+      documents = documents.map((document, idx) => {
+        const obj = data[idx];
         document.metadata.source = COLLECTION_NAME;
-        document.metadata.content = document.pageContent;
+        document.metadata.title = obj.title;
+        document.metadata.url = obj.url;
+        document.metadata.info = obj.info;
+        document.metadata.date = obj.date;
         document.metadata.uuid = uuidv4();
         return document;
       });
@@ -61,41 +65,36 @@ const runTask = async () => {
         });
       }
 
-        // Index
-        await qdrant.upsert(COLLECTION_NAME, {
-          wait: true,
-          batch: {
-              ids: points.map((point) => (point.id)),
-              vectors: points.map((point) => (point.vector)),
-              payloads: points.map((point) => (point.payload)),
-          },
-      })
-
+      // Index
+      await qdrant.upsert(COLLECTION_NAME, {
+        wait: true,
+        batch: {
+          ids: points.map((point) => point.id),
+          vectors: points.map((point) => point.vector),
+          payloads: points.map((point) => point.payload),
+        },
+      });
     }
 
     const search = await qdrant.search(COLLECTION_NAME, {
       vector: queryEmbedding,
       limit: 1,
       filter: {
-          must: [
-              {
-                  key: 'source',
-                  match: {
-                      value: COLLECTION_NAME
-                  }
-              }
-          ]
-      }
-  });
-  console.log("search", search);
+        must: [
+          {
+            key: "source",
+            match: {
+              value: COLLECTION_NAME,
+            },
+          },
+        ],
+      },
+    });
+    console.log("search", search);
 
-  const reposne = JSON.parse(search?.[0]?.payload?.content as string).url
+    const reposne = search[0].payload?.url;
 
-
-    await postResponse(
-      reposne,
-      token
-    );
+    await postResponse(reposne, token);
   } catch (error) {
     console.error("An error occurred:", (error as any).message);
   }
