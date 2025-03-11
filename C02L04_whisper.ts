@@ -1,34 +1,17 @@
-import axios from 'axios';
 import { config } from "dotenv";
-import { ChatOpenAI } from "@langchain/openai"
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import * as fs from 'fs'
 import * as https from 'https'
 import OpenAI from "openai";
+import { getTask, postResponse } from './helpers';
 
-const postToken = async () => {
+const runTask = async () => {
   try {
-    // Post to get the token
-    const tokenResponse = await axios.post('https://tasks.aidevs.pl/token/whisper', {
-      apikey: "get api key from env" // TODO: refactor
-    });
-
-    if (!tokenResponse.data || !tokenResponse.data.token) {
-      console.error('Token was not received.');
-      return;
-    }
-
-    const { token } = tokenResponse.data;
-    // Use the token to make a GET request
-    const taskResponse = await axios.get(`https://tasks.aidevs.pl/task/${token}`);
-
-    if (!taskResponse.data) {
-      console.error('Task data was not received.');
-      return;
-    }
-
-    const taskData = taskResponse.data as { msg: string, hint: string };
-    console.log('task data: ', taskData)
+    const { taskData, token } = (await getTask("whisper")) as {
+      taskData: { msg: string, hint: string };
+      token: string;
+    };
+    console.log("task data: ", taskData);
+    const todayDate = new Date();
     const fileUrl = taskData.msg.match(/(https?:\/\/[^ ]*)/)![1];
     console.log('fileUrl', fileUrl)
     await downloadFile(fileUrl, './whisper.mp3');
@@ -43,11 +26,7 @@ const postToken = async () => {
     });
     console.log('transcription', transcription)
     const answer = transcription.text
-    const answerResponse = await axios.post(`https://tasks.aidevs.pl/answer/${token}`, {
-      answer
-    });
-    console.log('Your answer has been submitted:', answerResponse.data);
-
+    await postResponse(answer, token);
   } catch (error) {
     console.error('An error occurred:', (error as any).message);
     console.error(error)
@@ -72,4 +51,4 @@ async function downloadFile(fileUrl: string, filePath: string): Promise<void> {
 
 
 
-postToken();
+runTask();
