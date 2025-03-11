@@ -50,6 +50,7 @@ const postResponse = async (data: unknown, token: string): Promise<void> => {
     );
     console.log("Your answer has been submitted:", answerResponse.data);
   } catch (error) {
+    console.log('Response error message: ',(error as any).response.data.msg )
     console.error("An error occurred:", (error as any).message);
   }
 };
