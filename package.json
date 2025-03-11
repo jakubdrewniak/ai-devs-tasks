@@ -1,15 +1,19 @@
 {
   "dependencies": {
     "@langchain/core": "^0.1.49",
+    "@ngrok/ngrok": "^1.2.0",
     "@qdrant/js-client-rest": "^1.8.1",
     "axios": "^1.6.8",
     "dotenv": "^16.4.5",
+    "express": "^4.19.2",
     "langchain": "^0.1.28",
     "openai": "^4.29.2",
     "prompt-sync": "^4.2.0",
+    "serpapi": "^2.1.0",
     "ts-node": "^10.9.2"
   },
   "devDependencies": {
+    "@types/express": "^4.17.21",
     "@types/node": "^20.11.30",
     "@types/prompt-sync": "^4.2.3",
     "prettier": "3.2.5",
